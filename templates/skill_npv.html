@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}NPV-DCF Analysis{% endblock %}
+{% block content %}
+  <section class="section-heading">
+    <p class="eyebrow">Executable Demo Skill</p>
+    <h1>NPV-DCF Analysis</h1>
+    <p>Upload cash flows and assumptions to calculate net cash flow, NPV, IRR, and validation files.</p>
+  </section>
+
+  <form class="upload-form" method="post" enctype="multipart/form-data">
+    <label>
+      <span>cash_flows.csv</span>
+      <input type="file" name="cash_flows" accept=".csv" required>
+    </label>
+    <label>
+      <span>assumptions.md</span>
+      <input type="file" name="assumptions" accept=".md,.txt" required>
+    </label>
+    <label>
+      <span>expected_results.csv optional</span>
+      <input type="file" name="expected_results" accept=".csv">
+    </label>
+    <button type="submit">Run Analysis</button>
+  </form>
+
+  <section class="notes">
+    <h2>Accepted Inputs</h2>
+    <p>Use `period,inflows,outflows` or provide `net_cash_flow`. In `assumptions.md`, include a line like `Discount rate: 10%`.</p>
+  </section>
+{% endblock %}

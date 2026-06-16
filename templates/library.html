@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Skill Library{% endblock %}
+{% block content %}
+  <section class="section-heading">
+    <p class="eyebrow">Module 2</p>
+    <h1>Skill Library</h1>
+    <p>Reusable research skills with executable inputs, outputs, and validation records.</p>
+  </section>
+
+  <div class="skill-list">
+    {% for skill in skills %}
+      <article class="skill-row">
+        <div>
+          <div class="status">{{ skill.status }}</div>
+          <h2>{{ skill.name }}</h2>
+          <p>{{ skill.description }}</p>
+        </div>
+        <a class="secondary-action" href="{{ skill.href }}">Open Skill</a>
+      </article>
+    {% endfor %}
+  </div>
+{% endblock %}

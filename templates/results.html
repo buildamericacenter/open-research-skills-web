@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}NPV-DCF Results{% endblock %}
+{% block content %}
+  <section class="section-heading">
+    <p class="eyebrow">Run {{ run_id }}</p>
+    <h1>NPV-DCF Results</h1>
+    <p>Generated result files are stored locally for this run.</p>
+  </section>
+
+  <section class="summary-grid">
+    <div class="metric">
+      <span>Discount Rate</span>
+      <strong>{{ "%.2f"|format(result.discount_rate * 100) }}%</strong>
+    </div>
+    <div class="metric">
+      <span>NPV</span>
+      <strong>${{ "{:,.2f}".format(result.npv) }}</strong>
+    </div>
+    <div class="metric">
+      <span>IRR</span>
+      <strong>{% if result.irr is none %}N/A{% else %}{{ "%.2f"|format(result.irr * 100) }}%{% endif %}</strong>
+    </div>
+  </section>
+
+  <div class="download-row">
+    <a class="secondary-action" href="{{ url_for('download', run_id=run_id, filename='npv_results.csv') }}">Download npv_results.csv</a>
+    <a class="secondary-action" href="{{ url_for('download', run_id=run_id, filename='validation_report.md') }}">Download validation_report.md</a>
+  </div>
+
+  <section class="table-section">
+    <h2>Cash Flow Results</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Inflows</th>
+            <th>Outflows</th>
+            <th>Net Cash Flow</th>
+            <th>Discount Factor</th>
+            <th>Present Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in result.rows %}
+            <tr>
+              <td>{{ row.period }}</td>
+              <td>{{ "{:,.2f}".format(row.inflows) }}</td>
+              <td>{{ "{:,.2f}".format(row.outflows) }}</td>
+              <td>{{ "{:,.2f}".format(row.net_cash_flow) }}</td>
+              <td>{{ "%.6f"|format(row.discount_factor) }}</td>
+              <td>{{ "{:,.2f}".format(row.present_value) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <h2>Validation</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Expected</th>
+            <th>Actual</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in result.validation %}
+            <tr>
+              <td>{{ item.metric }}</td>
+              <td>{{ item.expected }}</td>
+              <td>{{ item.actual }}</td>
+              <td>{{ item.status }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

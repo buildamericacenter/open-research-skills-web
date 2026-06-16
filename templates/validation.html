@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Validation{% endblock %}
+{% block content %}
+  <section class="section-heading">
+    <p class="eyebrow">Module 3</p>
+    <h1>Validation</h1>
+    <p>Run executable skills against expected results and inspect generated reports.</p>
+  </section>
+  <div class="panel">
+    <h2>Available Validation</h2>
+    <p>NPV-DCF Analysis compares actual NPV and IRR with `expected_results.csv` when provided.</p>
+    <a class="secondary-action" href="{{ url_for('npv_dcf_skill') }}">Run Validation</a>
+  </div>
+{% endblock %}
