@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, Response, flash, redirect, render_template, request, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 
 from npv_dcf import run_analysis
@@ -54,6 +54,89 @@ MODULES = [
     },
 ]
 
+SAMPLE_SKILLS = [
+    {
+        "id": "npv-dcf",
+        "name": "NPV-DCF Analysis",
+        "research_type": "Empirical / Financial Analysis",
+        "description": "Calculates NPV, IRR, and investment decision from cash-flow inputs.",
+        "input_type": "CSV + assumptions file",
+        "output_type": "results CSV + validation report",
+        "validation_status": "Validated",
+        "author": "Open Research Skills Team",
+        "version": "1.0",
+        "purpose": "Evaluate investment value from discounted cash-flow data.",
+        "procedure": "Upload cash flows, parse assumptions, calculate net cash flow, NPV, IRR, and compare expected results.",
+        "validation_standard": "Validated against expected NPV and IRR values when expected_results.csv is provided.",
+        "example_files": ["cash_flows.csv", "assumptions.md", "expected_results.csv"],
+        "executable": True,
+    },
+    {
+        "id": "bidding-collusion-coding",
+        "name": "Bidding Collusion Document Coding",
+        "research_type": "Qualitative Analysis",
+        "description": "Extracts and codes collusion behavior from court judgment documents.",
+        "input_type": "legal text document",
+        "output_type": "structured coding table",
+        "validation_status": "Tested",
+        "author": "Open Research Skills Team",
+        "version": "0.1",
+        "purpose": "Support structured qualitative coding of collusion evidence.",
+        "procedure": "Upload legal text, identify actors and behaviors, assign codes, and export a coding table.",
+        "validation_standard": "Tested on sample judgment excerpts with manual review.",
+        "example_files": ["judgment.txt", "coding_schema.md"],
+        "executable": False,
+    },
+    {
+        "id": "literature-screening-theme-coding",
+        "name": "Literature Screening and Theme Coding",
+        "research_type": "Literature Review",
+        "description": "Screens papers and extracts research themes using predefined criteria.",
+        "input_type": "paper list / abstracts",
+        "output_type": "screening table + theme summary",
+        "validation_status": "Draft",
+        "author": "Open Research Skills Team",
+        "version": "0.1",
+        "purpose": "Make literature screening criteria explicit and reusable.",
+        "procedure": "Load paper records, apply inclusion criteria, code themes, and summarize findings.",
+        "validation_standard": "Draft workflow pending inter-coder agreement testing.",
+        "example_files": ["abstracts.csv", "screening_criteria.md"],
+        "executable": False,
+    },
+    {
+        "id": "case-study-evidence-extraction",
+        "name": "Case Study Evidence Extraction",
+        "research_type": "Case Study",
+        "description": "Extracts timeline, actors, decisions, and evidence from case documents.",
+        "input_type": "case documents",
+        "output_type": "evidence table + case summary",
+        "validation_status": "Draft",
+        "author": "Open Research Skills Team",
+        "version": "0.1",
+        "purpose": "Organize case evidence into a transparent analytical record.",
+        "procedure": "Review documents, extract timeline events, identify actors, and compile evidence.",
+        "validation_standard": "Draft workflow pending case-level replication tests.",
+        "example_files": ["case_documents.zip", "extraction_template.csv"],
+        "executable": False,
+    },
+    {
+        "id": "optimization-model-formulation",
+        "name": "Optimization Model Formulation",
+        "research_type": "Optimization",
+        "description": "Converts a planning problem into decision variables, objective function, and constraints.",
+        "input_type": "problem description",
+        "output_type": "model formulation",
+        "validation_status": "Draft",
+        "author": "Open Research Skills Team",
+        "version": "0.1",
+        "purpose": "Translate planning problems into formal optimization models.",
+        "procedure": "Identify decisions, define objective, list constraints, and produce a structured formulation.",
+        "validation_standard": "Draft workflow pending benchmark problem review.",
+        "example_files": ["problem_statement.md", "formulation_template.md"],
+        "executable": False,
+    },
+]
+
 
 def save_upload(field: str, run_dir: Path, required: bool = True) -> Path | None:
     uploaded = request.files.get(field)
@@ -98,20 +181,42 @@ def save_skill_files(skill_id: str) -> list[dict[str, str]]:
     return saved_files
 
 
-def built_in_skills() -> list[dict[str, str]]:
-    return [
-        {
-            "id": "npv-dcf",
-            "name": "NPV-DCF Analysis",
-            "status": "Executable MVP",
-            "description": "Calculate NPV, IRR, and validation artifacts from uploaded cash flows.",
-            "author": "Platform",
-            "version": "1.0",
-            "created_at": "Built-in",
-            "href": url_for("npv_dcf_skill"),
-            "files": [],
-        }
-    ]
+def normalize_skill(skill: dict[str, str], contributed: bool = False) -> dict[str, str]:
+    normalized = {
+        "id": skill["id"],
+        "name": skill["name"],
+        "research_type": skill.get("research_type") or "Contributed Skill",
+        "description": skill.get("description", ""),
+        "input_type": skill.get("input_type") or skill.get("inputs") or "User-defined inputs",
+        "output_type": skill.get("output_type") or skill.get("outputs") or "User-defined outputs",
+        "validation_status": skill.get("validation_status") or skill.get("status") or "Draft",
+        "author": skill.get("author", "Anonymous"),
+        "version": skill.get("version", "0.1"),
+        "purpose": skill.get("purpose") or skill.get("description", ""),
+        "procedure": skill.get("procedure") or "Procedure summary will be added by the contributor.",
+        "validation_standard": skill.get("validation_standard") or "Validation standard not yet specified.",
+        "example_files": skill.get("example_files", []),
+        "files": skill.get("files", []),
+        "created_at": skill.get("created_at", "Sample"),
+        "contributed": contributed,
+        "executable": skill.get("executable", False),
+    }
+    normalized["detail_href"] = url_for("library_skill_detail", skill_id=normalized["id"])
+    normalized["use_href"] = url_for("use_skill", skill_id=normalized["id"])
+    normalized["comment_href"] = f"{normalized['detail_href']}#comments"
+    normalized["package_href"] = url_for("download_skill_package", skill_id=normalized["id"])
+    normalized["status_class"] = normalized["validation_status"].lower().replace(" ", "-").replace("/", "-")
+    return normalized
+
+
+def all_library_skills() -> list[dict[str, str]]:
+    sample_skills = [normalize_skill(skill) for skill in SAMPLE_SKILLS]
+    contributed = [normalize_skill(skill, contributed=True) for skill in load_contributed_skills()]
+    return sample_skills + contributed
+
+
+def find_library_skill(skill_id: str) -> dict[str, str] | None:
+    return next((skill for skill in all_library_skills() if skill["id"] == skill_id), None)
 
 
 @app.context_processor
@@ -126,11 +231,15 @@ def index():
 
 @app.route("/library")
 def library():
-    contributed = load_contributed_skills()
-    for skill in contributed:
-        skill["href"] = url_for("skill_detail", skill_id=skill["id"])
-    skills = built_in_skills() + contributed
-    return render_template("library.html", skills=skills)
+    skills = all_library_skills()
+    research_types = sorted({skill["research_type"] for skill in skills})
+    validation_statuses = sorted({skill["validation_status"] for skill in skills})
+    return render_template(
+        "library.html",
+        skills=skills,
+        research_types=research_types,
+        validation_statuses=validation_statuses,
+    )
 
 
 @app.route("/skills/npv-dcf", methods=["GET", "POST"])
@@ -183,6 +292,8 @@ def publish():
             "description": description,
             "author": author,
             "version": version,
+            "research_type": "Contributed Skill",
+            "validation_status": "Draft",
             "inputs": inputs,
             "outputs": outputs,
             "status": "Submitted",
@@ -193,18 +304,74 @@ def publish():
         skills.insert(0, skill)
         save_contributed_skills(skills)
         flash("Skill saved to the library.", "success")
-        return redirect(url_for("skill_detail", skill_id=skill_id))
+        return redirect(url_for("library_skill_detail", skill_id=skill_id))
 
     return render_template("publish.html")
 
 
-@app.route("/skills/contributed/<skill_id>")
-def skill_detail(skill_id: str):
-    skill = next((item for item in load_contributed_skills() if item["id"] == skill_id), None)
+@app.route("/library/skills/<skill_id>")
+def library_skill_detail(skill_id: str):
+    skill = find_library_skill(skill_id)
     if skill is None:
         flash("Skill not found.", "error")
         return redirect(url_for("library"))
     return render_template("skill_detail.html", skill=skill)
+
+
+@app.route("/skills/contributed/<skill_id>")
+def skill_detail(skill_id: str):
+    return redirect(url_for("library_skill_detail", skill_id=skill_id))
+
+
+@app.route("/skills/use/<skill_id>")
+def use_skill(skill_id: str):
+    skill = find_library_skill(skill_id)
+    if skill is None:
+        flash("Skill not found.", "error")
+        return redirect(url_for("library"))
+    if skill_id == "npv-dcf":
+        return redirect(url_for("npv_dcf_skill"))
+    flash("This skill is listed for review. Execution will be added in a later MVP iteration.", "success")
+    return redirect(url_for("library_skill_detail", skill_id=skill_id))
+
+
+@app.route("/skills/package/<skill_id>")
+def download_skill_package(skill_id: str):
+    skill = find_library_skill(skill_id)
+    if skill is None:
+        flash("Skill not found.", "error")
+        return redirect(url_for("library"))
+    lines = [
+        f"# {skill['name']}",
+        "",
+        f"- Research type: {skill['research_type']}",
+        f"- Validation status: {skill['validation_status']}",
+        f"- Author: {skill['author']}",
+        f"- Version: {skill['version']}",
+        "",
+        "## Purpose",
+        skill["purpose"],
+        "",
+        "## Required Inputs",
+        skill["input_type"],
+        "",
+        "## Expected Outputs",
+        skill["output_type"],
+        "",
+        "## Procedure Summary",
+        skill["procedure"],
+        "",
+        "## Validation Standard",
+        skill["validation_standard"],
+        "",
+    ]
+    content = "\n".join(lines)
+    filename = secure_filename(f"{skill['name'].lower().replace(' ', '-')}-package.md")
+    return Response(
+        content,
+        mimetype="text/markdown",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @app.route("/skills/contributed/<skill_id>/files/<filename>")

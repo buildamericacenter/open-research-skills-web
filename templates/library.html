@@ -1,34 +1,108 @@
 {% extends "base.html" %}
 {% block title %}Skill Library{% endblock %}
 {% block content %}
-  <section class="section-heading">
+  <section class="section-heading compact-heading">
     <p class="eyebrow">Module 2</p>
     <h1>Skill Library</h1>
-    <p>Executable skills, sample data, and validation status.</p>
+    <p>Search, use, and evaluate reusable research skills.</p>
   </section>
 
-  <div class="module-layout library-layout">
-    <aside class="module-sidebar library-sidebar">
-      <span>Library Scope</span>
-      <strong>Curated methods</strong>
-      <p>Each skill lists inputs, outputs, and review status.</p>
-    </aside>
-    <div class="skill-list">
+  <section class="library-controls" aria-label="Skill library filters">
+    <label class="search-field">
+      <span>Search skills</span>
+      <input id="skillSearch" type="search" placeholder="Search by name, type, author, or description">
+    </label>
+    <label>
+      <span>Research Type</span>
+      <select id="researchTypeFilter">
+        <option value="">All research types</option>
+        {% for research_type in research_types %}
+          <option value="{{ research_type }}">{{ research_type }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Validation Status</span>
+      <select id="validationStatusFilter">
+        <option value="">All statuses</option>
+        {% for status in validation_statuses %}
+          <option value="{{ status }}">{{ status }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </section>
+
+  <section class="skill-card-grid" id="skillGrid" aria-live="polite">
     {% for skill in skills %}
-      <article class="skill-row">
-        <div>
-          <div class="status">{{ skill.status }}</div>
-          <h2>{{ skill.name }}</h2>
-          <p>{{ skill.description }}</p>
-          <div class="skill-meta">
-            <span>{{ skill.author }}</span>
-            <span>Version {{ skill.version }}</span>
-            <span>{{ skill.created_at }}</span>
-          </div>
+      <article
+        class="skill-card"
+        data-search="{{ (skill.name ~ ' ' ~ skill.research_type ~ ' ' ~ skill.description ~ ' ' ~ skill.author ~ ' ' ~ skill.input_type ~ ' ' ~ skill.output_type)|lower }}"
+        data-research-type="{{ skill.research_type }}"
+        data-validation-status="{{ skill.validation_status }}"
+      >
+        <div class="skill-card-header">
+          <span class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</span>
+          <span class="version">v{{ skill.version }}</span>
         </div>
-        <a class="secondary-action" href="{{ skill.href }}">Open Skill</a>
+        <h2>{{ skill.name }}</h2>
+        <p>{{ skill.description }}</p>
+        <dl class="skill-facts">
+          <div>
+            <dt>Research type</dt>
+            <dd>{{ skill.research_type }}</dd>
+          </div>
+          <div>
+            <dt>Input</dt>
+            <dd>{{ skill.input_type }}</dd>
+          </div>
+          <div>
+            <dt>Output</dt>
+            <dd>{{ skill.output_type }}</dd>
+          </div>
+          <div>
+            <dt>Author</dt>
+            <dd>{{ skill.author }}</dd>
+          </div>
+        </dl>
+        <div class="card-actions">
+          <a class="secondary-action" href="{{ skill.detail_href }}">View Details</a>
+          <a class="primary-action" href="{{ skill.use_href }}">Use Skill</a>
+          <a class="text-action" href="{{ skill.comment_href }}">Comment</a>
+        </div>
       </article>
     {% endfor %}
-    </div>
-  </div>
+  </section>
+
+  <p class="empty-state" id="emptyState" hidden>No skills match the current search and filters.</p>
+
+  <script>
+    const searchInput = document.getElementById("skillSearch");
+    const researchTypeFilter = document.getElementById("researchTypeFilter");
+    const validationStatusFilter = document.getElementById("validationStatusFilter");
+    const skillCards = Array.from(document.querySelectorAll(".skill-card"));
+    const emptyState = document.getElementById("emptyState");
+
+    function filterSkills() {
+      const query = searchInput.value.trim().toLowerCase();
+      const researchType = researchTypeFilter.value;
+      const validationStatus = validationStatusFilter.value;
+      let visibleCount = 0;
+
+      skillCards.forEach((card) => {
+        const matchesSearch = !query || card.dataset.search.includes(query);
+        const matchesType = !researchType || card.dataset.researchType === researchType;
+        const matchesStatus = !validationStatus || card.dataset.validationStatus === validationStatus;
+        const isVisible = matchesSearch && matchesType && matchesStatus;
+        card.hidden = !isVisible;
+        if (isVisible) visibleCount += 1;
+      });
+
+      emptyState.hidden = visibleCount !== 0;
+    }
+
+    [searchInput, researchTypeFilter, validationStatusFilter].forEach((control) => {
+      control.addEventListener("input", filterSkills);
+      control.addEventListener("change", filterSkills);
+    });
+  </script>
 {% endblock %}

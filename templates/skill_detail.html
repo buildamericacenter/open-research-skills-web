@@ -1,39 +1,88 @@
 {% extends "base.html" %}
 {% block title %}{{ skill.name }}{% endblock %}
 {% block content %}
-  <section class="section-heading">
-    <p class="eyebrow">{{ skill.status }}</p>
-    <h1>{{ skill.name }}</h1>
-    <p>{{ skill.description }}</p>
+  <section class="detail-hero">
+    <div>
+      <p class="eyebrow">Skill Detail</p>
+      <h1>{{ skill.name }}</h1>
+      <p>{{ skill.description }}</p>
+    </div>
+    <div class="detail-actions">
+      <a class="secondary-action" href="{{ skill.package_href }}">Download Skill Package</a>
+      <a class="primary-action" href="{{ skill.use_href }}">Run / Use Skill</a>
+      <a class="text-action" href="#comments">Submit Comment</a>
+    </div>
   </section>
 
-  <div class="module-layout library-layout">
-    <aside class="module-sidebar library-sidebar">
-      <span>Library Item</span>
+  <section class="metadata-strip" aria-label="Skill metadata">
+    <div>
+      <span>Research Type</span>
+      <strong>{{ skill.research_type }}</strong>
+    </div>
+    <div>
+      <span>Validation</span>
+      <strong class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</strong>
+    </div>
+    <div>
+      <span>Author</span>
       <strong>{{ skill.author }}</strong>
-      <p>Version {{ skill.version }} · {{ skill.created_at }}</p>
-    </aside>
-    <section class="detail-stack">
-      <article class="panel">
-        <h2>Inputs</h2>
-        <p>{{ skill.inputs or "No input specification provided." }}</p>
-      </article>
-      <article class="panel">
-        <h2>Outputs</h2>
-        <p>{{ skill.outputs or "No output specification provided." }}</p>
-      </article>
-      <article class="panel">
-        <h2>Files</h2>
-        {% if skill.files %}
-          <div class="file-list">
-            {% for file in skill.files %}
-              <a class="secondary-action" href="{{ url_for('skill_file', skill_id=skill.id, filename=file.filename) }}">{{ file.filename }}</a>
-            {% endfor %}
-          </div>
-        {% else %}
-          <p>No files uploaded.</p>
-        {% endif %}
-      </article>
-    </section>
-  </div>
+    </div>
+    <div>
+      <span>Version</span>
+      <strong>{{ skill.version }}</strong>
+    </div>
+  </section>
+
+  <section class="detail-grid">
+    <article class="detail-panel">
+      <h2>Purpose</h2>
+      <p>{{ skill.purpose }}</p>
+    </article>
+    <article class="detail-panel">
+      <h2>Required Inputs</h2>
+      <p>{{ skill.input_type }}</p>
+    </article>
+    <article class="detail-panel">
+      <h2>Expected Outputs</h2>
+      <p>{{ skill.output_type }}</p>
+    </article>
+    <article class="detail-panel">
+      <h2>Procedure Summary</h2>
+      <p>{{ skill.procedure }}</p>
+    </article>
+    <article class="detail-panel">
+      <h2>Validation Standard</h2>
+      <p>{{ skill.validation_standard }}</p>
+    </article>
+    <article class="detail-panel">
+      <h2>Example Files</h2>
+      {% if skill.example_files %}
+        <div class="file-list">
+          {% for file in skill.example_files %}
+            <span class="file-pill">{{ file }}</span>
+          {% endfor %}
+        </div>
+      {% elif skill.files %}
+        <div class="file-list">
+          {% for file in skill.files %}
+            <a class="secondary-action" href="{{ url_for('skill_file', skill_id=skill.id, filename=file.filename) }}">{{ file.filename }}</a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No example files provided.</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="comments-panel" id="comments">
+    <h2>Comments</h2>
+    <p>No comments yet. Comment submission is a placeholder for this MVP.</p>
+    <form class="comment-form">
+      <label>
+        <span>Comment</span>
+        <textarea rows="3" placeholder="Add a review note or usage question"></textarea>
+      </label>
+      <button type="button">Submit Comment</button>
+    </form>
+  </section>
 {% endblock %}
