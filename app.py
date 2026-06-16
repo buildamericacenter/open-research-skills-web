@@ -22,22 +22,32 @@ MODULES = [
     {
         "name": "Publish / Contribute Skills",
         "slug": "publish",
-        "summary": "Submit research methods, data checks, and executable skill packages.",
+        "label": "Publish",
+        "summary": "Submit reusable research skill packages.",
     },
     {
         "name": "Skill Library",
         "slug": "library",
-        "summary": "Browse reusable research skills with inputs, outputs, and validation status.",
+        "label": "Library",
+        "summary": "Browse executable methods and examples.",
     },
     {
         "name": "Validation",
         "slug": "validation",
-        "summary": "Run skills against expected results and inspect generated reports.",
+        "label": "Validation",
+        "summary": "Check outputs against expected results.",
+    },
+    {
+        "name": "Demo / Education Videos",
+        "slug": "videos",
+        "label": "Education",
+        "summary": "Host short walkthroughs and teaching notes.",
     },
     {
         "name": "User Account Management",
         "slug": "account",
-        "summary": "Local profile placeholder for future login, roles, and saved runs.",
+        "label": "Account",
+        "summary": "Manage profiles, roles, and saved work.",
     },
 ]
 
@@ -110,6 +120,11 @@ def validation():
 @app.route("/publish")
 def publish():
     return render_template("publish.html")
+
+
+@app.route("/videos")
+def videos():
+    return render_template("videos.html")
 
 
 @app.route("/account")

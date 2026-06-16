@@ -4,11 +4,18 @@
   <section class="section-heading">
     <p class="eyebrow">Module 3</p>
     <h1>Validation</h1>
-    <p>Run executable skills against expected results and inspect generated reports.</p>
+    <p>Compare skill outputs with expected results.</p>
   </section>
-  <div class="panel">
-    <h2>Available Validation</h2>
-    <p>NPV-DCF Analysis compares actual NPV and IRR with `expected_results.csv` when provided.</p>
-    <a class="secondary-action" href="{{ url_for('npv_dcf_skill') }}">Run Validation</a>
+  <div class="module-layout validation-layout">
+    <aside class="module-sidebar validation-sidebar">
+      <span>Validation Mode</span>
+      <strong>Evidence first</strong>
+      <p>Upload expected results to produce a report.</p>
+    </aside>
+    <article class="panel feature-panel">
+      <h2>NPV-DCF Validation</h2>
+      <p>Compares actual NPV and IRR with `expected_results.csv` when provided.</p>
+      <a class="secondary-action" href="{{ url_for('npv_dcf_skill') }}">Run Validation</a>
+    </article>
   </div>
 {% endblock %}

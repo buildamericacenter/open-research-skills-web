@@ -4,10 +4,16 @@
   <section class="section-heading">
     <p class="eyebrow">Module 2</p>
     <h1>Skill Library</h1>
-    <p>Reusable research skills with executable inputs, outputs, and validation records.</p>
+    <p>Executable skills, sample data, and validation status.</p>
   </section>
 
-  <div class="skill-list">
+  <div class="module-layout library-layout">
+    <aside class="module-sidebar library-sidebar">
+      <span>Library Scope</span>
+      <strong>Curated methods</strong>
+      <p>Each skill lists inputs, outputs, and review status.</p>
+    </aside>
+    <div class="skill-list">
     {% for skill in skills %}
       <article class="skill-row">
         <div>
@@ -18,5 +24,6 @@
         <a class="secondary-action" href="{{ skill.href }}">Open Skill</a>
       </article>
     {% endfor %}
+    </div>
   </div>
 {% endblock %}

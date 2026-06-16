@@ -4,10 +4,27 @@
   <section class="section-heading">
     <p class="eyebrow">Module 5</p>
     <h1>User Account Management</h1>
-    <p>Local MVP profile area for future authentication, saved runs, and contributor roles.</p>
+    <p>Profile, role, and saved-run management.</p>
   </section>
-  <div class="panel">
-    <h2>Local User</h2>
-    <p>Status: guest user. Authentication can be added after the executable skill workflow is stable.</p>
+  <div class="module-layout account-layout">
+    <aside class="module-sidebar account-sidebar">
+      <span>Current Session</span>
+      <strong>Guest user</strong>
+      <p>Authentication can be added after the workflow is stable.</p>
+    </aside>
+    <section class="card-grid">
+      <article class="panel">
+        <h2>Profile</h2>
+        <p>Name, affiliation, and contact details.</p>
+      </article>
+      <article class="panel">
+        <h2>Roles</h2>
+        <p>Contributor, reviewer, and administrator access.</p>
+      </article>
+      <article class="panel">
+        <h2>Saved Runs</h2>
+        <p>Recent analyses and generated reports.</p>
+      </article>
+    </section>
   </div>
 {% endblock %}

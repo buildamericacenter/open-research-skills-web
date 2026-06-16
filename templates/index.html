@@ -3,16 +3,16 @@
 {% block content %}
   <section class="hero">
     <div>
-      <p class="eyebrow">Local MVP</p>
+      <p class="eyebrow">Academic Methods Platform</p>
       <h1>Open Research Skills Platform</h1>
-      <p class="lede">Publish, run, validate, and teach reusable research skills with transparent local files.</p>
+      <p class="lede">A concise workspace for publishing, running, and validating reusable research skills.</p>
     </div>
     <a class="primary-action" href="{{ url_for('npv_dcf_skill') }}">Run NPV-DCF Analysis</a>
   </section>
 
   <section class="module-grid" aria-label="Platform modules">
     {% for module in modules %}
-      <a class="module-card" href="{{ url_for(module.slug) }}">
+      <a class="module-card module-{{ module.slug }}" href="{{ url_for(module.slug) }}">
         <span>{{ loop.index }}</span>
         <h2>{{ module.name }}</h2>
         <p>{{ module.summary }}</p>
