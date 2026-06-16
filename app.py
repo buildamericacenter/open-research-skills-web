@@ -1,4 +1,5 @@
 import os
+import csv
 import json
 import re
 import zipfile
@@ -20,6 +21,8 @@ SKILL_INDEX = SKILL_DIR / "skills.json"
 DATA_DIR = BASE_DIR / "data"
 SUBMITTED_SKILLS_INDEX = DATA_DIR / "submitted_skills.json"
 SUBMITTED_SKILLS_UPLOAD_DIR = BASE_DIR / "uploads" / "submitted_skills"
+VALIDATION_UPLOAD_DIR = BASE_DIR / "uploads" / "validation_runs"
+VALIDATION_OUTPUT_DIR = BASE_DIR / "output"
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "local-mvp-secret-key"
@@ -344,6 +347,173 @@ def files_for_skill(folder: Path) -> list[dict[str, str]]:
     ]
 
 
+def parse_number(value: str) -> float:
+    raw = str(value).strip().replace(",", "").replace("%", "")
+    if raw.startswith("(") and raw.endswith(")"):
+        raw = f"-{raw[1:-1]}"
+    return float(raw)
+
+
+def read_metric_csv(path: Path, value_column: str) -> tuple[dict[str, dict[str, str]], str | None]:
+    try:
+        with path.open(newline="", encoding="utf-8-sig") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames:
+                return {}, "CSV file must include a header row."
+            normalized_fields = {field.strip().lower(): field for field in reader.fieldnames}
+            if "metric" not in normalized_fields or value_column not in normalized_fields:
+                return {}, f"CSV must include metric and {value_column} columns."
+
+            metric_field = normalized_fields["metric"]
+            value_field = normalized_fields[value_column]
+            rows: dict[str, dict[str, str]] = {}
+            for row in reader:
+                metric = row.get(metric_field, "").strip()
+                if metric:
+                    rows[metric.lower()] = {
+                        "metric": metric,
+                        "value": row.get(value_field, "").strip(),
+                        "unit": row.get(normalized_fields.get("unit", ""), "").strip() if "unit" in normalized_fields else "",
+                        "notes": row.get(normalized_fields.get("notes", ""), "").strip() if "notes" in normalized_fields else "",
+                        "tolerance": row.get(normalized_fields.get("tolerance", ""), "").strip() if "tolerance" in normalized_fields else "",
+                    }
+            return rows, None
+    except Exception as exc:
+        return {}, f"CSV could not be parsed: {exc}"
+
+
+def write_validation_report(result: dict[str, object], report_path: Path) -> None:
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# Validation Report",
+        "",
+        f"- Skill type: {result['skill_type']}",
+        f"- Validation source type: {result['validation_source_type']}",
+        f"- Status: {result['status']}",
+        f"- Metrics checked: {result['total_checked']}",
+        "",
+        "## Passed Items",
+    ]
+    passed = result.get("passed_items", [])
+    failed = result.get("failed_items", [])
+    missing = result.get("missing_metrics", [])
+    lines.extend([f"- {item}" for item in passed] or ["- None"])
+    lines.append("")
+    lines.append("## Failed Items")
+    lines.extend([f"- {item}" for item in failed] or ["- None"])
+    lines.append("")
+    lines.append("## Missing Items")
+    lines.extend([f"- {item}" for item in missing] or ["- None"])
+    lines.append("")
+    lines.append("## Final Decision")
+    lines.append(str(result["explanation"]))
+    report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def validate_numerical_output(output_file: Path, validation_source_file: Path, validation_source_type: str) -> dict[str, object]:
+    actual_rows, actual_error = read_metric_csv(output_file, "value")
+    expected_rows, expected_error = read_metric_csv(validation_source_file, "expected_value")
+    report_path = VALIDATION_OUTPUT_DIR / "validation_report.md"
+
+    if actual_error or expected_error:
+        result = {
+            "skill_type": "Numerical",
+            "validation_source_type": validation_source_type,
+            "status": "Needs Review",
+            "total_checked": 0,
+            "passed_count": 0,
+            "failed_count": 0,
+            "missing_metrics": [error for error in [actual_error, expected_error] if error],
+            "passed_items": [],
+            "failed_items": [],
+            "explanation": "Required data is missing or cannot be parsed.",
+            "report_path": report_path,
+        }
+        write_validation_report(result, report_path)
+        return result
+
+    passed_items: list[str] = []
+    failed_items: list[str] = []
+    missing_metrics: list[str] = []
+
+    for metric_key, expected in expected_rows.items():
+        actual = actual_rows.get(metric_key)
+        metric_name = expected["metric"]
+        if actual is None:
+            missing_metrics.append(metric_name)
+            continue
+
+        if metric_name.lower() == "decision":
+            if actual["value"].strip().lower() == expected["value"].strip().lower():
+                passed_items.append(metric_name)
+            else:
+                failed_items.append(f"{metric_name}: actual '{actual['value']}' != expected '{expected['value']}'")
+            continue
+
+        try:
+            actual_value = parse_number(actual["value"])
+            expected_value = parse_number(expected["value"])
+            tolerance = parse_number(expected["tolerance"]) if expected["tolerance"] else 0.0
+        except ValueError:
+            failed_items.append(f"{metric_name}: numeric value could not be parsed")
+            continue
+
+        if abs(actual_value - expected_value) <= tolerance:
+            passed_items.append(metric_name)
+        else:
+            failed_items.append(
+                f"{metric_name}: actual {actual_value:g}, expected {expected_value:g}, tolerance {tolerance:g}"
+            )
+
+    total_checked = len(passed_items) + len(failed_items)
+    if missing_metrics:
+        status = "Needs Review"
+        explanation = "Some required metrics were missing."
+    elif failed_items:
+        status = "Invalidated"
+        explanation = "One or more required metrics failed validation."
+    else:
+        status = "Validated"
+        explanation = "All required metrics passed validation."
+
+    result = {
+        "skill_type": "Numerical",
+        "validation_source_type": validation_source_type,
+        "status": status,
+        "total_checked": total_checked,
+        "passed_count": len(passed_items),
+        "failed_count": len(failed_items),
+        "missing_metrics": missing_metrics,
+        "passed_items": passed_items,
+        "failed_items": failed_items,
+        "explanation": explanation,
+        "report_path": report_path,
+    }
+    write_validation_report(result, report_path)
+    return result
+
+
+def validate_skill_output(skill_type: str, output_file: Path, validation_source_file: Path, validation_source_type: str) -> dict[str, object]:
+    if skill_type != "Numerical":
+        report_path = VALIDATION_OUTPUT_DIR / "validation_report.md"
+        result = {
+            "skill_type": skill_type,
+            "validation_source_type": validation_source_type,
+            "status": "Needs Review",
+            "total_checked": 0,
+            "passed_count": 0,
+            "failed_count": 0,
+            "missing_metrics": [],
+            "passed_items": [],
+            "failed_items": [],
+            "explanation": "Automatic validation for this skill type is coming soon.",
+            "report_path": report_path,
+        }
+        write_validation_report(result, report_path)
+        return result
+    return validate_numerical_output(output_file, validation_source_file, validation_source_type)
+
+
 def load_contributed_skills() -> list[dict[str, str]]:
     if not SKILL_INDEX.exists():
         return []
@@ -466,9 +636,31 @@ def npv_dcf_skill():
     return render_template("skill_npv.html")
 
 
-@app.route("/validation")
+@app.route("/validation", methods=["GET", "POST"])
 def validation():
-    return render_template("validation.html")
+    if request.method == "POST":
+        skill_type = request.form.get("skill_type", "Numerical")
+        validation_source_type = request.form.get("validation_source_type", "Expected Results File")
+        output_upload = request.files.get("skill_output_file")
+        source_upload = request.files.get("validation_source_file")
+
+        if output_upload is None or output_upload.filename == "":
+            return render_template("validation.html", error="Skill Output File is required.", result=None), 400
+        if source_upload is None or source_upload.filename == "":
+            return render_template("validation.html", error="Validation Source File is required.", result=None), 400
+
+        run_id = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S") + "-" + uuid4().hex[:8]
+        run_dir = VALIDATION_UPLOAD_DIR / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        output_path = run_dir / secure_filename(output_upload.filename)
+        source_path = run_dir / secure_filename(source_upload.filename)
+        output_upload.save(output_path)
+        source_upload.save(source_path)
+
+        result = validate_skill_output(skill_type, output_path, source_path, validation_source_type)
+        return render_template("validation.html", error=None, result=result)
+
+    return render_template("validation.html", error=None, result=None)
 
 
 @app.route("/publish", methods=["GET", "POST"])
@@ -641,6 +833,11 @@ def download(run_id: str, filename: str):
     safe_run_id = secure_filename(run_id)
     safe_filename = secure_filename(filename)
     return send_from_directory(RESULT_DIR / safe_run_id, safe_filename, as_attachment=True)
+
+
+@app.route("/output/<filename>")
+def output_file(filename: str):
+    return send_from_directory(VALIDATION_OUTPUT_DIR, secure_filename(filename), as_attachment=True)
 
 
 if __name__ == "__main__":

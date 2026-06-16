@@ -1,21 +1,119 @@
 {% extends "base.html" %}
 {% block title %}Validation{% endblock %}
 {% block content %}
-  <section class="section-heading">
-    <p class="eyebrow">Module 3</p>
+  <section class="validation-hero">
     <h1>Validation</h1>
-    <p>Compare skill outputs with expected results.</p>
+    <p>Compare skill outputs against paper results, expected results, expert baselines, or validation skills.</p>
   </section>
-  <div class="module-layout validation-layout">
-    <aside class="module-sidebar validation-sidebar">
-      <span>Validation Mode</span>
-      <strong>Evidence first</strong>
-      <p>Upload expected results to produce a report.</p>
-    </aside>
-    <article class="panel feature-panel">
-      <h2>NPV-DCF Validation</h2>
-      <p>Compares actual NPV and IRR with `expected_results.csv` when provided.</p>
-      <a class="secondary-action" href="{{ url_for('npv_dcf_skill') }}">Run Validation</a>
+
+  {% if error %}
+    <div class="message error">{{ error }}</div>
+  {% endif %}
+
+  <section class="validation-source-grid" aria-label="Validation source types">
+    <article>
+      <h2>Paper Results</h2>
+      <p>Compare outputs with values reported in a source paper.</p>
     </article>
-  </div>
+    <article>
+      <h2>Expected Results</h2>
+      <p>Check outputs against a trusted expected-results file.</p>
+    </article>
+    <article>
+      <h2>Expert Baseline</h2>
+      <p>Evaluate consistency with expert-coded reference data.</p>
+    </article>
+    <article>
+      <h2>Validation Skill</h2>
+      <p>Use a separate skill to review the generated output.</p>
+    </article>
+  </section>
+
+  <form class="validation-form" method="post" enctype="multipart/form-data">
+    <h2>Run Validation</h2>
+    <div class="form-grid two-col">
+      <label>
+        <span>Skill Type</span>
+        <select name="skill_type">
+          {% for option in ["Numerical", "Qualitative Coding", "Literature Review", "Case Study", "Optimization"] %}
+            <option value="{{ option }}">{{ option }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Validation Source Type</span>
+        <select name="validation_source_type">
+          {% for option in ["Paper Results", "Expected Results File", "Expert Baseline", "Validation Skill"] %}
+            <option value="{{ option }}">{{ option }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Skill Output File</span>
+        <input type="file" name="skill_output_file" accept=".csv,.txt,.md,.json" required>
+      </label>
+      <label>
+        <span>Validation Source File</span>
+        <input type="file" name="validation_source_file" accept=".csv,.txt,.md,.json" required>
+      </label>
+    </div>
+    <button type="submit">Run Validation</button>
+  </form>
+
+  {% if result %}
+    <section class="validation-result">
+      <div class="result-header">
+        <span class="badge status-{{ result.status|lower|replace(' ', '-') }}">{{ result.status }}</span>
+        <h2>Validation Result</h2>
+        <p>{{ result.explanation }}</p>
+      </div>
+      <dl class="result-grid">
+        <div>
+          <dt>Validation Source Type</dt>
+          <dd>{{ result.validation_source_type }}</dd>
+        </div>
+        <div>
+          <dt>Total metrics checked</dt>
+          <dd>{{ result.total_checked }}</dd>
+        </div>
+        <div>
+          <dt>Number passed</dt>
+          <dd>{{ result.passed_count }}</dd>
+        </div>
+        <div>
+          <dt>Number failed</dt>
+          <dd>{{ result.failed_count }}</dd>
+        </div>
+      </dl>
+
+      <section class="validation-lists">
+        <article>
+          <h3>Missing metrics</h3>
+          {% if result.missing_metrics %}
+            <ul>
+              {% for item in result.missing_metrics %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>None</p>
+          {% endif %}
+        </article>
+        <article>
+          <h3>Failed items</h3>
+          {% if result.failed_items %}
+            <ul>
+              {% for item in result.failed_items %}
+                <li>{{ item }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>None</p>
+          {% endif %}
+        </article>
+      </section>
+
+      <a class="secondary-action" href="{{ url_for('output_file', filename='validation_report.md') }}">Download validation_report.md</a>
+    </section>
+  {% endif %}
 {% endblock %}

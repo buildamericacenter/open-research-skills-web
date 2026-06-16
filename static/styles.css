@@ -913,6 +913,158 @@ a {
   font-size: 14px;
 }
 
+.validation-hero {
+  display: grid;
+  gap: 10px;
+  max-width: 840px;
+  margin-bottom: 24px;
+}
+
+.validation-hero h1 {
+  margin: 0;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.04;
+}
+
+.validation-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.validation-source-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.validation-source-grid article,
+.validation-form,
+.validation-result {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.validation-source-grid article {
+  min-height: 132px;
+  padding: 18px;
+}
+
+.validation-source-grid h2,
+.validation-form h2,
+.validation-result h2 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
+
+.validation-source-grid p,
+.validation-result p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.validation-form,
+.validation-result {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+
+.validation-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 750;
+}
+
+.validation-form select,
+.validation-form input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+}
+
+.validation-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.result-header {
+  display: grid;
+  gap: 8px;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.result-grid div,
+.validation-lists article {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.result-grid dt {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.result-grid dd {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.validation-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.validation-lists h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.validation-lists ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.status-invalidated {
+  background: #fff0ed;
+  color: #a33822;
+}
+
+.status-needs-review {
+  background: #fff3e6;
+  color: #9a4f00;
+}
+
 .package-upload-card,
 .extraction-preview,
 .missing-info-card {
@@ -1196,12 +1348,15 @@ th {
   .module-grid,
   .summary-grid,
   .card-grid,
+  .validation-source-grid,
   .form-grid,
   .two-col,
   .three-col,
   .confirmation-list,
   .preview-grid,
   .summary-list,
+  .result-grid,
+  .validation-lists,
   .skill-card-grid,
   .simple-skill-grid,
   .skill-facts,
