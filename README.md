@@ -39,6 +39,41 @@ The included `render.yaml` also supports Render Blueprint deployment.
 
 Note: Render free services use ephemeral local storage. Uploaded files and generated results can disappear after restarts or redeploys. For persistent uploads, upgrade later and add a persistent disk or object storage.
 
+## AWS App Runner Deployment
+
+Repository:
+
+```text
+https://github.com/buildamericacenter/open-research-skills-web
+```
+
+AWS App Runner settings:
+
+- Source: GitHub repository
+- Runtime: `Python 3`
+- Build command: `pip install -r requirements.txt`
+- Start command: `gunicorn app:app`
+- Port: `8080` or the `PORT` environment variable assigned by App Runner
+
+The Flask entry file is `app.py`, and the Flask application variable is `app`. The app also exposes `application = app` for WSGI compatibility.
+
+The Flask startup reads the `PORT` environment variable:
+
+```python
+port = int(os.environ.get("PORT", 5000))
+app.run(host="0.0.0.0", port=port)
+```
+
+Health check:
+
+```text
+/health
+```
+
+Local storage note: this MVP keeps uploaded skill packages, submitted metadata, and generated validation files in local folders such as `uploads/`, `data/`, `storage/`, and `output/`. These folders are created automatically if missing.
+
+For production, uploaded files should be moved to AWS S3, and metadata should be moved to a managed database.
+
 ## Cash Flow Format
 
 The app accepts common column names. Recommended columns:

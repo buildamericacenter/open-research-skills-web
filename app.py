@@ -27,6 +27,7 @@ VALIDATION_OUTPUT_DIR = BASE_DIR / "output"
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "local-mvp-secret-key"
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
+application = app
 
 
 MODULES = [
@@ -61,6 +62,26 @@ MODULES = [
         "summary": "Manage profiles, roles, and saved work.",
     },
 ]
+
+
+def ensure_local_storage() -> None:
+    for folder in [
+        UPLOAD_DIR,
+        RESULT_DIR,
+        SKILL_DIR,
+        DATA_DIR,
+        SUBMITTED_SKILLS_UPLOAD_DIR,
+        VALIDATION_UPLOAD_DIR,
+        VALIDATION_OUTPUT_DIR,
+    ]:
+        folder.mkdir(parents=True, exist_ok=True)
+    if not SKILL_INDEX.exists():
+        SKILL_INDEX.write_text("[]", encoding="utf-8")
+    if not SUBMITTED_SKILLS_INDEX.exists():
+        SUBMITTED_SKILLS_INDEX.write_text("[]", encoding="utf-8")
+
+
+ensure_local_storage()
 
 SAMPLE_SKILLS = [
     {
@@ -593,6 +614,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.route("/library")
 def library():
     skills = all_library_skills()
@@ -842,4 +868,4 @@ def output_file(filename: str):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="127.0.0.1", port=port, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

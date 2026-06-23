@@ -1,8 +1,13 @@
 .venv/
+venv/
 __pycache__/
 *.pyc
+.env
 .DS_Store
 
+uploads/
+data/
+output/
 storage/uploads/*
 storage/results/*
 storage/skills/*
