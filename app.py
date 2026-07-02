@@ -11,6 +11,7 @@ from flask import Flask, Response, flash, redirect, render_template, request, se
 from werkzeug.utils import secure_filename
 
 from npv_dcf import run_analysis
+from s3_storage import presigned_download_url, safe_s3_path, s3_bucket_name, upload_directory_to_s3, use_s3_storage
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -366,6 +367,30 @@ def files_for_skill(folder: Path) -> list[dict[str, str]]:
         for path in root.rglob("*")
         if path.is_file()
     ]
+
+
+def original_package_path(folder: Path, uploaded_file_name: str) -> Path | None:
+    if not uploaded_file_name:
+        return None
+    path = folder / secure_filename(uploaded_file_name)
+    return path if path.exists() else None
+
+
+def attach_s3_storage(skill: dict[str, object], folder: Path) -> None:
+    if not use_s3_storage():
+        return
+
+    s3_prefix = safe_s3_path("submitted_skills", str(skill["id"]))
+    upload_directory_to_s3(folder, s3_prefix)
+    package_path = original_package_path(folder, str(skill.get("uploaded_file_name", "")))
+    if package_path is None:
+        package_path = next((path for path in folder.iterdir() if path.is_file()), None)
+
+    skill["storage"] = "s3"
+    skill["s3_bucket"] = s3_bucket_name()
+    skill["s3_prefix"] = s3_prefix
+    if package_path is not None:
+        skill["s3_package_key"] = safe_s3_path(s3_prefix, package_path.relative_to(folder).as_posix())
 
 
 def parse_number(value: str) -> float:
@@ -742,6 +767,11 @@ def publish():
             "folder": folder_name,
             "files": files_for_skill(folder),
         }
+        try:
+            attach_s3_storage(skill, folder)
+        except Exception as exc:
+            return render_template("publish.html", error=f"Skill was parsed, but S3 upload failed: {exc}", preview=None), 500
+
         skills = load_submitted_skills()
         skills.insert(0, skill)
         save_submitted_skills(skills)
@@ -796,6 +826,9 @@ def download_skill_package(skill_id: str):
     if skill is None:
         flash("Skill not found.", "error")
         return redirect(url_for("library"))
+    if skill.get("storage") == "s3" and skill.get("s3_package_key"):
+        return redirect(presigned_download_url(skill["s3_package_key"], skill.get("uploaded_file_name") or f"{skill['id']}.zip"))
+
     lines = [
         f"# {skill['name']}",
         "",
@@ -838,6 +871,11 @@ def skill_file(skill_id: str, filename: str):
 @app.route("/uploads/submitted_skills/<skill_id>/<path:filename>")
 def submitted_skill_file(skill_id: str, filename: str):
     safe_skill_id = secure_filename(skill_id)
+    skill = next((item for item in load_submitted_skills() if item["id"] == safe_skill_id), None)
+    if skill and skill.get("storage") == "s3" and skill.get("s3_prefix"):
+        s3_key = safe_s3_path(skill["s3_prefix"], "package", filename)
+        return redirect(presigned_download_url(s3_key, Path(filename).name))
+
     folder = SUBMITTED_SKILLS_UPLOAD_DIR / safe_skill_id
     package_folder = folder / "package"
     base = package_folder if package_folder.exists() else folder

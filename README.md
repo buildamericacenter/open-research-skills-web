@@ -39,6 +39,30 @@ The included `render.yaml` also supports Render Blueprint deployment.
 
 Note: Render free services use ephemeral local storage. Uploaded files and generated results can disappear after restarts or redeploys. For persistent uploads, upgrade later and add a persistent disk or object storage.
 
+### Persistent Skill Package Storage on S3
+
+The app can store submitted skill package files in a private AWS S3 bucket while keeping MVP metadata in `data/submitted_skills.json`.
+
+Required Render environment variables:
+
+```text
+USE_S3_STORAGE=true
+AWS_REGION=us-east-1
+S3_BUCKET_NAME=open-research-skills-packages
+AWS_ACCESS_KEY_ID=<render-s3-user-access-key-id>
+AWS_SECRET_ACCESS_KEY=<render-s3-user-secret-access-key>
+```
+
+Use a dedicated low-permission IAM user for Render. The IAM user should only have access to the S3 bucket used by this app. Do not use the AWS root account or an administrator access key.
+
+When S3 storage is enabled, submitted skill files are uploaded under:
+
+```text
+s3://open-research-skills-packages/submitted_skills/<skill_id>/
+```
+
+Download links use temporary S3 presigned URLs, so the bucket can remain private.
+
 ## AWS App Runner Deployment
 
 Repository:
