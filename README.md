@@ -98,6 +98,46 @@ Local storage note: this MVP keeps uploaded skill packages, submitted metadata, 
 
 For production, uploaded files should be moved to AWS S3, and metadata should be moved to a managed database.
 
+## AWS Elastic Beanstalk Deployment
+
+This repository includes a GitHub Actions workflow at `.github/workflows/deploy-eb.yml`.
+
+Elastic Beanstalk environment:
+
+```text
+Application: open-research-skills-web
+Environment: open-research-skills-web-env
+URL: http://open-research-skills-web-env.eba-uxp2iea5.us-east-1.elasticbeanstalk.com
+```
+
+Required GitHub Actions repository secrets:
+
+```text
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+EB_APPLICATION_NAME
+EB_ENVIRONMENT_NAME
+```
+
+Expected secret values:
+
+```text
+AWS_REGION=us-east-1
+EB_APPLICATION_NAME=open-research-skills-web
+EB_ENVIRONMENT_NAME=open-research-skills-web-env
+```
+
+Required Elastic Beanstalk environment properties:
+
+```text
+USE_S3_STORAGE=true
+AWS_REGION=us-east-1
+S3_BUCKET_NAME=open-research-skills-packages
+```
+
+The Elastic Beanstalk EC2 instance profile should have `OpenResearchSkillsS3StoragePolicy` attached so the app can upload submitted skill packages to S3 without storing AWS access keys in the Flask app environment.
+
 ## Cash Flow Format
 
 The app accepts common column names. Recommended columns:
