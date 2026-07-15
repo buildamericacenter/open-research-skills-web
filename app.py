@@ -4,10 +4,15 @@ import json
 import re
 import zipfile
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from uuid import uuid4
 
-from flask import Flask, Response, flash, redirect, render_template, request, send_from_directory, url_for
+import pymysql
+from flask import Flask, Response, flash, redirect, render_template, request, send_from_directory, session, url_for
+from pymysql.cursors import DictCursor
+from pymysql.err import IntegrityError, MySQLError
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from npv_dcf import run_analysis
@@ -26,9 +31,15 @@ VALIDATION_UPLOAD_DIR = BASE_DIR / "uploads" / "validation_runs"
 VALIDATION_OUTPUT_DIR = BASE_DIR / "output"
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "local-mvp-secret-key"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "local-mvp-secret-key")
 app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 application = app
+
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "billauchpad-umd-db.cndi2fq3ieot.us-east-1.rds.amazonaws.com")
+MYSQL_PORT = int(os.environ.get("MYSQL_PORT", "3306"))
+MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "openresearchskills")
+MYSQL_USER = os.environ.get("MYSQL_USER", "open_research_dev")
+MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 
 
 MODULES = [
@@ -63,6 +74,94 @@ MODULES = [
         "summary": "Manage profiles, roles, and saved work.",
     },
 ]
+
+
+class AccountRepository:
+    def connection(self):
+        if not MYSQL_PASSWORD:
+            raise RuntimeError("MYSQL_PASSWORD is not configured.")
+        return pymysql.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            database=MYSQL_DATABASE,
+            cursorclass=DictCursor,
+            autocommit=True,
+            connect_timeout=8,
+        )
+
+    def find_by_email(self, email: str) -> dict[str, object] | None:
+        with self.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM account WHERE email = %s LIMIT 1", (email.lower(),))
+                return cursor.fetchone()
+
+    def find_by_id(self, account_id: int) -> dict[str, object] | None:
+        with self.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM account WHERE account_id = %s LIMIT 1", (account_id,))
+                return cursor.fetchone()
+
+    def create(self, full_name: str, email: str, password_hash: str) -> int:
+        with self.connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO account (full_name, email, password) VALUES (%s, %s, %s)",
+                    (full_name, email.lower(), password_hash),
+                )
+                return int(cursor.lastrowid)
+
+    def update_profile(self, account_id: int, full_name: str, email: str, password_hash: str | None = None) -> None:
+        with self.connection() as conn:
+            with conn.cursor() as cursor:
+                if password_hash:
+                    cursor.execute(
+                        "UPDATE account SET full_name = %s, email = %s, password = %s WHERE account_id = %s",
+                        (full_name, email.lower(), password_hash, account_id),
+                    )
+                else:
+                    cursor.execute(
+                        "UPDATE account SET full_name = %s, email = %s WHERE account_id = %s",
+                        (full_name, email.lower(), account_id),
+                    )
+
+
+account_repository = AccountRepository()
+
+
+def password_hash(password: str) -> str:
+    return generate_password_hash(password, method="pbkdf2:sha256", salt_length=8)
+
+
+def current_account() -> dict[str, object] | None:
+    account_id = session.get("account_id")
+    if not account_id:
+        return None
+    try:
+        account = account_repository.find_by_id(int(account_id))
+    except (RuntimeError, MySQLError):
+        session.pop("account_id", None)
+        return None
+    if account is None:
+        session.pop("account_id", None)
+    return account
+
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if current_account() is None:
+            flash("Please log in to manage your account.", "error")
+            return redirect(url_for("login", next=request.path))
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+def display_initials(full_name: str) -> str:
+    parts = [part[0].upper() for part in full_name.split() if part]
+    return "".join(parts[:2]) or "A"
 
 
 def ensure_local_storage() -> None:
@@ -606,6 +705,11 @@ def normalize_skill(skill: dict[str, str], contributed: bool = False) -> dict[st
         "example_files": skill.get("example_files", []),
         "files": skill.get("files", []),
         "folder": skill.get("folder", ""),
+        "uploaded_file_name": skill.get("uploaded_file_name", ""),
+        "storage": skill.get("storage", "local"),
+        "s3_package_key": skill.get("s3_package_key", ""),
+        "s3_prefix": skill.get("s3_prefix", ""),
+        "s3_bucket": skill.get("s3_bucket", ""),
         "created_at": skill.get("created_at", "Sample"),
         "contributed": contributed,
         "executable": skill.get("executable", False),
@@ -631,7 +735,12 @@ def find_library_skill(skill_id: str) -> dict[str, str] | None:
 
 @app.context_processor
 def inject_globals():
-    return {"modules": MODULES}
+    account = current_account()
+    return {
+        "modules": MODULES,
+        "current_account": account,
+        "current_account_initials": display_initials(str(account["full_name"])) if account else "",
+    }
 
 
 @app.route("/")
@@ -828,6 +937,11 @@ def download_skill_package(skill_id: str):
         return redirect(url_for("library"))
     if skill.get("storage") == "s3" and skill.get("s3_package_key"):
         return redirect(presigned_download_url(skill["s3_package_key"], skill.get("uploaded_file_name") or f"{skill['id']}.zip"))
+    if skill.get("folder") and skill.get("uploaded_file_name"):
+        folder = SUBMITTED_SKILLS_UPLOAD_DIR / secure_filename(skill["folder"])
+        package_path = original_package_path(folder, skill["uploaded_file_name"])
+        if package_path is not None:
+            return send_from_directory(folder, package_path.name, as_attachment=True)
 
     lines = [
         f"# {skill['name']}",
@@ -888,8 +1002,142 @@ def videos():
 
 
 @app.route("/account")
+@login_required
 def account():
-    return render_template("account.html")
+    account_data = current_account()
+    my_skills = [
+        skill for skill in all_library_skills()
+        if str(skill.get("author", "")).strip().lower() in {
+            str(account_data["full_name"]).strip().lower(),
+            str(account_data["email"]).strip().lower(),
+        }
+    ]
+    return render_template(
+        "account.html",
+        account=account_data,
+        initials=display_initials(str(account_data["full_name"])) if account_data else "A",
+        my_skills=my_skills,
+    )
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_account():
+        return redirect(url_for("account"))
+
+    form = {"full_name": "", "email": ""}
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+        form = {"full_name": full_name, "email": email}
+
+        if not full_name or not email or not password:
+            return render_template("register.html", error="Name, email, and password are required.", form=form), 400
+        if "@" not in email:
+            return render_template("register.html", error="Please enter a valid email address.", form=form), 400
+        if len(password) < 8:
+            return render_template("register.html", error="Password must be at least 8 characters.", form=form), 400
+        if password != confirm_password:
+            return render_template("register.html", error="Passwords do not match.", form=form), 400
+
+        try:
+            existing = account_repository.find_by_email(email)
+            if existing:
+                return render_template("register.html", error="An account with this email already exists.", form=form), 409
+            account_id = account_repository.create(full_name, email, password_hash(password))
+        except IntegrityError:
+            return render_template("register.html", error="An account with this email already exists.", form=form), 409
+        except (RuntimeError, MySQLError) as exc:
+            return render_template("register.html", error=f"Account database is unavailable: {exc}", form=form), 503
+
+        session.clear()
+        session["account_id"] = account_id
+        flash("Account created successfully.", "success")
+        return redirect(url_for("account"))
+
+    return render_template("register.html", error=None, form=form)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_account():
+        return redirect(url_for("account"))
+
+    form = {"email": ""}
+    next_url = request.args.get("next") or request.form.get("next") or url_for("account")
+    if not next_url.startswith("/"):
+        next_url = url_for("account")
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        form = {"email": email}
+        if not email or not password:
+            return render_template("login.html", error="Email and password are required.", form=form, next_url=next_url), 400
+
+        try:
+            account_data = account_repository.find_by_email(email)
+        except (RuntimeError, MySQLError) as exc:
+            return render_template("login.html", error=f"Account database is unavailable: {exc}", form=form, next_url=next_url), 503
+
+        if account_data is None or not check_password_hash(str(account_data["password"]), password):
+            return render_template("login.html", error="Invalid email or password.", form=form, next_url=next_url), 401
+
+        session.clear()
+        session["account_id"] = int(account_data["account_id"])
+        flash("Signed in successfully.", "success")
+        return redirect(next_url)
+
+    return render_template("login.html", error=None, form=form, next_url=next_url)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Signed out successfully.", "success")
+    return redirect(url_for("login"))
+
+
+@app.route("/account/profile", methods=["POST"])
+@login_required
+def update_account_profile():
+    account_data = current_account()
+    account_id = int(account_data["account_id"])
+    full_name = request.form.get("full_name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not full_name or not email:
+        flash("Name and email are required.", "error")
+        return redirect(url_for("account"))
+    if "@" not in email:
+        flash("Please enter a valid email address.", "error")
+        return redirect(url_for("account"))
+    if password and len(password) < 8:
+        flash("Password must be at least 8 characters.", "error")
+        return redirect(url_for("account"))
+    if password != confirm_password:
+        flash("Passwords do not match.", "error")
+        return redirect(url_for("account"))
+
+    try:
+        existing = account_repository.find_by_email(email)
+        if existing and int(existing["account_id"]) != account_id:
+            flash("Another account already uses that email.", "error")
+            return redirect(url_for("account"))
+        account_repository.update_profile(account_id, full_name, email, password_hash(password) if password else None)
+    except IntegrityError:
+        flash("Another account already uses that email.", "error")
+        return redirect(url_for("account"))
+    except (RuntimeError, MySQLError) as exc:
+        flash(f"Account database is unavailable: {exc}", "error")
+        return redirect(url_for("account"))
+
+    flash("Profile updated.", "success")
+    return redirect(url_for("account"))
 
 
 @app.route("/download/<run_id>/<filename>")

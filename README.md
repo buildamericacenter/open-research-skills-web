@@ -19,10 +19,34 @@ It produces:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export MYSQL_PASSWORD=<database-password>
+export SECRET_KEY=<random-secret-key>
 python app.py
 ```
 
 Open `http://127.0.0.1:5000`.
+
+## Account Database
+
+Registration, login, logout, and profile management use the MySQL `account` table in the `openresearchskills` schema.
+
+Required environment variable:
+
+```text
+MYSQL_PASSWORD=<database-password>
+```
+
+Optional environment variables:
+
+```text
+MYSQL_HOST=billauchpad-umd-db.cndi2fq3ieot.us-east-1.rds.amazonaws.com
+MYSQL_PORT=3306
+MYSQL_DATABASE=openresearchskills
+MYSQL_USER=open_research_dev
+SECRET_KEY=<random-secret-key>
+```
+
+Passwords are stored as PBKDF2 hashes in the `account.password` column.
 
 ## Deploy on Render Free
 

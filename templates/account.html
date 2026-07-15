@@ -8,68 +8,78 @@
 
   <section class="account-layout">
     <aside class="account-profile-card">
-      <div class="avatar">DU</div>
-      <h2>Demo User</h2>
+      <div class="avatar">{{ initials }}</div>
+      <h2>{{ account.full_name }}</h2>
       <p>Contributor</p>
       <dl>
         <div>
-          <dt>Institution</dt>
-          <dd>Open Research Skills Team</dd>
-        </div>
-        <div>
           <dt>Email</dt>
-          <dd>demo@example.com</dd>
+          <dd>{{ account.email }}</dd>
         </div>
         <div>
           <dt>Joined</dt>
-          <dd>2026</dd>
+          <dd>{{ account.register_tstamp }}</dd>
         </div>
         <div>
           <dt>Skills contributed</dt>
-          <dd>3</dd>
+          <dd>{{ my_skills|default([])|length }}</dd>
         </div>
         <div>
           <dt>Validations completed</dt>
-          <dd>2</dd>
+          <dd>0</dd>
         </div>
       </dl>
       <div class="profile-actions">
-        <button type="button">Edit Profile</button>
-        <a class="secondary-action" href="#">Sign Out</a>
+        <a class="secondary-action" href="{{ url_for('logout') }}">Sign Out</a>
       </div>
     </aside>
 
     <div class="account-main">
       <section class="account-card">
         <div class="account-card-header">
+          <h2>Profile Settings</h2>
+        </div>
+        <form class="account-form" method="post" action="{{ url_for('update_account_profile') }}">
+          <div class="form-grid two-col">
+            <label>
+              <span>Full Name</span>
+              <input type="text" name="full_name" value="{{ account.full_name }}" required maxlength="45">
+            </label>
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" value="{{ account.email }}" required maxlength="100">
+            </label>
+            <label>
+              <span>New Password</span>
+              <input type="password" name="password" minlength="8" autocomplete="new-password">
+            </label>
+            <label>
+              <span>Confirm Password</span>
+              <input type="password" name="confirm_password" minlength="8" autocomplete="new-password">
+            </label>
+          </div>
+          <button type="submit">Save Profile</button>
+        </form>
+      </section>
+
+      <section class="account-card">
+        <div class="account-card-header">
           <h2>My Skills</h2>
           <a class="text-action" href="{{ url_for('publish') }}">Publish</a>
         </div>
         <div class="account-list">
-          <article>
-            <div>
-              <h3>NPV-DCF Analysis</h3>
-              <p>Version 1.0 · Today</p>
-            </div>
-            <span class="badge status-validated">Validated</span>
-            <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id='npv-dcf') }}">Manage</a>
-          </article>
-          <article>
-            <div>
-              <h3>Bidding Collusion Document Coding</h3>
-              <p>Version 0.1 · This week</p>
-            </div>
-            <span class="badge status-tested">Tested</span>
-            <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id='bidding-collusion-coding') }}">Manage</a>
-          </article>
-          <article>
-            <div>
-              <h3>Literature Screening and Theme Coding</h3>
-              <p>Version 0.1 · This month</p>
-            </div>
-            <span class="badge status-draft">Draft</span>
-            <a class="secondary-action" href="{{ url_for('library_skill_detail', skill_id='literature-screening-theme-coding') }}">Manage</a>
-          </article>
+          {% for skill in my_skills|default([]) %}
+            <article>
+              <div>
+                <h3>{{ skill.name }}</h3>
+                <p>Version {{ skill.version }} · {{ skill.created_at }}</p>
+              </div>
+              <span class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</span>
+              <a class="secondary-action" href="{{ skill.detail_href }}">Manage</a>
+            </article>
+          {% else %}
+            <p>No skills are linked to this account yet.</p>
+          {% endfor %}
         </div>
       </section>
 
@@ -78,52 +88,15 @@
           <h2>My Validation Results</h2>
           <a class="text-action" href="{{ url_for('validation') }}">Run Validation</a>
         </div>
-        <div class="account-table-wrap">
-          <table class="account-table">
-            <thead>
-              <tr>
-                <th>Skill</th>
-                <th>Source</th>
-                <th>Result</th>
-                <th>Level</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>NPV-DCF Analysis</td>
-                <td>Expected Results</td>
-                <td><span class="badge status-validated">Validated</span></td>
-                <td>Level 3</td>
-                <td>Today</td>
-              </tr>
-              <tr>
-                <td>Bidding Collusion Coding</td>
-                <td>Expert Baseline</td>
-                <td><span class="badge status-needs-review">Needs Review</span></td>
-                <td>Level 2</td>
-                <td>This week</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="account-card small-card">
-        <h2>My Comments</h2>
-        <ul class="compact-activity">
-          <li>Commented on NPV-DCF Analysis</li>
-          <li>Suggested clearer validation threshold</li>
-        </ul>
+        <p>No validation results are linked to this account yet.</p>
       </section>
 
       <section class="account-card small-card">
         <h2>Account Settings</h2>
         <div class="settings-links">
-          <a href="#">Profile</a>
-          <a href="#">Notifications</a>
-          <a href="#">Privacy</a>
-          <a href="#">API / Agent Access</a>
+          <a href="{{ url_for('account') }}">Profile</a>
+          <a href="{{ url_for('my_submitted_skills') }}">Submitted Skills</a>
+          <a href="{{ url_for('logout') }}">Sign Out</a>
         </div>
       </section>
     </div>

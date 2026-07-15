@@ -145,6 +145,12 @@ class PublishSkillTests(unittest.TestCase):
         self.assertIn("skill-package.zip", confirmation_body)
         self.assertIn("Go to Skill Library", confirmation_body)
 
+        package = self.client.get("/skills/package/reusable-coding-skill")
+        self.assertEqual(package.status_code, 200)
+        self.assertEqual(package.data[:2], b"PK")
+        self.assertIn("attachment", package.headers["Content-Disposition"])
+        package.close()
+
 
 if __name__ == "__main__":
     unittest.main()

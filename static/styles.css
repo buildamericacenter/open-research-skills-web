@@ -121,7 +121,9 @@ a {
 .publish-form button,
 .comment-form button,
 .package-upload-card button,
-.missing-info-card button {
+.missing-info-card button,
+.auth-form button,
+.account-form button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -147,7 +149,9 @@ a {
 .publish-form button:hover,
 .comment-form button:hover,
 .package-upload-card button:hover,
-.missing-info-card button:hover {
+.missing-info-card button:hover,
+.auth-form button:hover,
+.account-form button:hover {
   background: var(--accent-dark);
   border-color: var(--accent-dark);
 }
@@ -858,7 +862,9 @@ a {
 
 .publish-form label,
 .upload-form label,
-.missing-info-card label {
+.missing-info-card label,
+.auth-form label,
+.account-form label {
   display: grid;
   gap: 8px;
   font-weight: 750;
@@ -869,7 +875,9 @@ a {
 .publish-form textarea,
 .upload-form input,
 .missing-info-card input,
-.missing-info-card select {
+.missing-info-card select,
+.auth-form input,
+.account-form input {
   width: 100%;
   padding: 10px;
   border: 1px solid var(--line);
@@ -886,6 +894,46 @@ a {
   color: var(--error);
   font-size: 13px;
   font-style: normal;
+}
+
+.auth-layout {
+  display: grid;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.auth-panel {
+  width: min(480px, 100%);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.auth-panel h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+}
+
+.auth-panel p {
+  color: var(--muted);
+}
+
+.auth-form,
+.account-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-switch {
+  margin: 16px 0 0;
+}
+
+.auth-switch a {
+  color: var(--accent);
+  font-weight: 750;
 }
 
 .publish-hero {
