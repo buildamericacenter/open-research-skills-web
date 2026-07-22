@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ skill.name }}{% endblock %}
+{% block content %}
+  <section class="detail-hero">
+    <div>
+      <p class="eyebrow">Grant Application Skill Collection</p>
+      <h1>{{ skill.name }}</h1>
+      <p>{{ skill.description }}</p>
+    </div>
+    <div class="detail-actions">
+      <a class="secondary-action" href="{{ skill.source_url }}" target="_blank" rel="noopener noreferrer">View GitHub Repository</a>
+    </div>
+  </section>
+
+  <section class="metadata-strip" aria-label="Skill collection metadata">
+    <div><span>Program</span><strong>FY 2026 SS4A</strong></div>
+    <div><span>Skills</span><strong>{{ collection_skills|length }}</strong></div>
+    <div><span>Author</span><strong>{{ skill.author }}</strong></div>
+    <div><span>Source</span><strong>GitHub</strong></div>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading">
+      <h2>Included Skills</h2>
+      <p>Open an individual skill to review its purpose, inputs, outputs, procedure, and source.</p>
+    </div>
+    <div class="simple-skill-grid">
+      {% for item in collection_skills %}
+        <article class="simple-skill-card">
+          <div>
+            <span class="badge">SS4A</span>
+            <h3>{{ item.name }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+          <a class="primary-action" href="{{ item.detail_href }}">Open Skill</a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

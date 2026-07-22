@@ -46,6 +46,8 @@ class SkillLibraryTests(unittest.TestCase):
             "Comments",
         ]
         for skill in SAMPLE_SKILLS:
+            if skill.get("is_collection"):
+                continue
             response = self.client.get(f"/library/skills/{skill['id']}")
             body = response.get_data(as_text=True)
 
@@ -67,6 +69,23 @@ class SkillLibraryTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("# NPV-DCF Analysis", body)
         self.assertIn("## Validation Standard", body)
+
+    def test_ss4a_collection_and_component_skills_render(self):
+        library_response = self.client.get("/library")
+        self.assertIn("SS4A Grant Application Skills", library_response.get_data(as_text=True))
+
+        collection_response = self.client.get("/library/skills/ss4a-grant-application-skills")
+        collection_body = collection_response.get_data(as_text=True)
+        self.assertEqual(collection_response.status_code, 200)
+        self.assertEqual(collection_body.count(">Open Skill</a>"), 8)
+        self.assertIn("SS4A Fatality Analysis", collection_body)
+        self.assertIn("SS4A Application Reviewer", collection_body)
+
+        component_response = self.client.get("/library/skills/ss4a-budget")
+        component_body = component_response.get_data(as_text=True)
+        self.assertEqual(component_response.status_code, 200)
+        self.assertIn("SS4A Budget", component_body)
+        self.assertIn("View Source", component_body)
 
 
 if __name__ == "__main__":

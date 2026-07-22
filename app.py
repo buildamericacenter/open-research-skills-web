@@ -260,6 +260,118 @@ SAMPLE_SKILLS = [
     },
 ]
 
+SS4A_REPOSITORY_URL = "https://github.com/dongyangzhen/SS4A-Grant-Application-Skill"
+SS4A_SKILLS = [
+    {
+        "id": "ss4a-fatality-analysis",
+        "name": "SS4A Fatality Analysis",
+        "description": "Calculates FY 2026 SS4A fatality counts and rates and drafts safety-context content.",
+        "input_type": "FARS fatality data + 2020 Census population",
+        "output_type": "calculation tables + safety narrative",
+        "purpose": "Prepare fatality, serious-injury, and safety-context fields for SS4A applications.",
+        "procedure": "Confirm grant type, collect jurisdiction data, apply the NOFO formula, and produce grant-specific tables and narrative.",
+    },
+    {
+        "id": "ss4a-underserved-community",
+        "name": "SS4A Underserved Community",
+        "description": "Determines underserved-community status and prepares the related SS4A application fields.",
+        "input_type": "jurisdiction + Census tract and population data",
+        "output_type": "designation tables + application field answers",
+        "purpose": "Evaluate Area of Persistent Poverty and underserved-community status under the FY 2026 NOFO.",
+        "procedure": "Collect grant type and geography, verify qualifying tracts, calculate affected population, and draft required fields.",
+    },
+    {
+        "id": "ss4a-map",
+        "name": "SS4A Map",
+        "description": "Plans required PDF and spatial map deliverables for Planning, Demonstration, and Implementation grants.",
+        "input_type": "jurisdiction, roadway, project, and spatial data",
+        "output_type": "map specification + location narrative",
+        "purpose": "Prepare NOFO-aligned SS4A map deliverables and location content.",
+        "procedure": "Identify grant type, inventory spatial inputs, define required layers, and check map and narrative consistency.",
+    },
+    {
+        "id": "ss4a-narrative",
+        "name": "SS4A Narrative",
+        "description": "Drafts and reviews FY 2026 SS4A narratives against grant-specific requirements and page limits.",
+        "input_type": "application facts, scope, data, budget, and grant type",
+        "output_type": "NOFO-aligned narrative draft",
+        "purpose": "Produce a clear SS4A narrative that addresses the applicable selection criteria.",
+        "procedure": "Select the correct grant pathway, assemble verified inputs, draft required sections, and run compliance checks.",
+    },
+    {
+        "id": "ss4a-budget",
+        "name": "SS4A Budget",
+        "description": "Builds and reviews SS4A budget workbooks, match calculations, and eligibility checks.",
+        "input_type": "scope, cost estimates, funding sources, and DOT template",
+        "output_type": "completed budget workbook + review findings",
+        "purpose": "Align the grant budget with the narrative, eligible activities, and Federal match rules.",
+        "procedure": "Map scope items to budget categories, calculate shares, populate the template, and reconcile totals.",
+    },
+    {
+        "id": "ss4a-support-letters",
+        "name": "SS4A Support Letters",
+        "description": "Drafts and reviews support, coordination, roadway-owner, public-safety, and match letters.",
+        "input_type": "partner details, commitments, project scope, and letter type",
+        "output_type": "review-ready support letters",
+        "purpose": "Create consistent evidence of support, coordination, ownership, and match commitments.",
+        "procedure": "Identify the required letter type, collect signer commitments, draft precise language, and check consistency.",
+    },
+    {
+        "id": "ss4a-checklist",
+        "name": "SS4A Checklist",
+        "description": "Runs a submission-readiness review and produces a missing-items tracker and upload manifest.",
+        "input_type": "assembled SS4A application package",
+        "output_type": "readiness checklist + missing-items tracker",
+        "purpose": "Verify that required application components are present and internally consistent before submission.",
+        "procedure": "Identify the grant pathway, inventory package files, check requirements, and prioritize missing items.",
+    },
+    {
+        "id": "ss4a-application-reviewer",
+        "name": "SS4A Application Reviewer",
+        "description": "Performs a NOFO-strict review of a complete SS4A package with severity-rated findings.",
+        "input_type": "complete application package + supporting evidence",
+        "output_type": "compliance report + go/no-go determination",
+        "purpose": "Provide a final, evidence-based compliance review before SS4A submission.",
+        "procedure": "Review eligibility, forms, narrative, budget, maps, data, and cross-document consistency, then rate findings.",
+    },
+]
+
+for ss4a_skill in SS4A_SKILLS:
+    ss4a_skill.update(
+        {
+            "research_type": "Grant Application",
+            "validation_status": "Reference",
+            "author": "dongyangzhen",
+            "version": "FY 2026",
+            "validation_standard": "Reviewed against the FY 2026 SS4A Notice of Funding Opportunity by the source author.",
+            "skill_category": "grant-application",
+            "parent_collection": "ss4a-grant-application-skills",
+            "source_url": f"{SS4A_REPOSITORY_URL}/tree/main/skills/{ss4a_skill['id']}",
+            "executable": False,
+        }
+    )
+
+SAMPLE_SKILLS.append(
+    {
+        "id": "ss4a-grant-application-skills",
+        "name": "SS4A Grant Application Skills",
+        "research_type": "Grant Application",
+        "description": "Eight coordinated skills for preparing and reviewing a complete FY 2026 Safe Streets and Roads for All application.",
+        "input_type": "SS4A application data and documents",
+        "output_type": "analysis, narrative, maps, budget, letters, and compliance review",
+        "validation_status": "Reference",
+        "author": "dongyangzhen",
+        "version": "FY 2026",
+        "purpose": "Support the full SS4A grant workflow from safety analysis through final submission review.",
+        "procedure": "Use the eight component skills in sequence according to the needs of the grant application.",
+        "validation_standard": "The source repository identifies the FY 2026 SS4A NOFO as the controlling source.",
+        "skill_category": "grant-application",
+        "source_url": SS4A_REPOSITORY_URL,
+        "is_collection": True,
+        "executable": False,
+    }
+)
+
 SKILL_CATEGORIES = [
     {
         "slug": "research-method",
@@ -727,6 +839,8 @@ def normalize_skill(skill: dict[str, str], contributed: bool = False) -> dict[st
         "contributed": contributed,
         "executable": skill.get("executable", False),
         "skill_category": skill.get("skill_category") or "research-method",
+        "source_url": skill.get("source_url", ""),
+        "is_collection": skill.get("is_collection", False),
     }
     normalized["detail_href"] = url_for("library_skill_detail", skill_id=normalized["id"])
     normalized["use_href"] = url_for("use_skill", skill_id=normalized["id"])
@@ -744,7 +858,9 @@ def all_library_skills() -> list[dict[str, str]]:
 
 
 def find_library_skill(skill_id: str) -> dict[str, str] | None:
-    return next((skill for skill in all_library_skills() if skill["id"] == skill_id), None)
+    skills = all_library_skills()
+    skills.extend(normalize_skill(skill) for skill in SS4A_SKILLS)
+    return next((skill for skill in skills if skill["id"] == skill_id), None)
 
 
 @app.context_processor
@@ -946,6 +1062,12 @@ def library_skill_detail(skill_id: str):
     if skill is None:
         flash("Skill not found.", "error")
         return redirect(url_for("library"))
+    if skill.get("is_collection"):
+        return render_template(
+            "skill_collection.html",
+            skill=skill,
+            collection_skills=[normalize_skill(item) for item in SS4A_SKILLS],
+        )
     return render_template("skill_detail.html", skill=skill)
 
 

@@ -9,6 +9,9 @@
     </div>
     <div class="detail-actions">
       <a class="secondary-action" href="{{ skill.package_href }}">Download Skill Package</a>
+      {% if skill.source_url %}
+        <a class="secondary-action" href="{{ skill.source_url }}" target="_blank" rel="noopener noreferrer">View Source</a>
+      {% endif %}
       <a class="primary-action" href="{{ skill.use_href }}">Run / Use Skill</a>
       <a class="text-action" href="#comments">Submit Comment</a>
     </div>
