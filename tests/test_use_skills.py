@@ -25,6 +25,7 @@ class UseSkillsPageTests(unittest.TestCase):
         self.assertIn('href="/publish">Contribute Skills</a>', body)
         self.assertIn('href="/library">Skills Library</a>', body)
         self.assertIn('href="/use-skills">Use Skills</a>', body)
+        self.assertIn('href="/resources">Resources</a>', body)
         self.assertIn('href="/login">Sign In</a>', body)
         self.assertNotIn('href="/validation"', body)
         self.assertNotIn('href="/videos"', body)

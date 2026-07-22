@@ -275,6 +275,7 @@ a {
 }
 
 .module-videos,
+.module-resources,
 .education-sidebar {
   --accent: var(--education);
 }

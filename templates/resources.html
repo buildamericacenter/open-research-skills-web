@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Resources{% endblock %}
+{% block content %}
+  <section class="section-heading">
+    <p class="eyebrow">Learn and Build</p>
+    <h1>Resources</h1>
+    <p>Practical materials for learning, creating, and applying research skills.</p>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading compact-heading">
+      <h2>Tutorials / Education Videos</h2>
+      <p>Short walkthroughs for applying research methods and using executable skills.</p>
+    </div>
+    <div class="simple-skill-grid">
+      <article class="simple-skill-card">
+        <div>
+          <span class="badge">Tutorial</span>
+          <h3>NPV-DCF Walkthrough</h3>
+          <p>Learn how to prepare inputs, set assumptions, run the analysis, and review validation results.</p>
+        </div>
+        <a class="primary-action" href="{{ url_for('npv_dcf_skill') }}">Open Walkthrough</a>
+      </article>
+      <article class="simple-skill-card">
+        <div>
+          <span class="badge">Guide</span>
+          <h3>Explore Research Skills</h3>
+          <p>Review skill purposes, required inputs, procedures, outputs, and validation standards.</p>
+        </div>
+        <a class="secondary-action" href="{{ url_for('library') }}">Browse Skills</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading compact-heading">
+      <h2>Skill Templates</h2>
+      <p>Start from an established structure when documenting or contributing a research skill.</p>
+    </div>
+    <div class="simple-skill-grid">
+      <article class="simple-skill-card">
+        <div>
+          <span class="badge">Template</span>
+          <h3>Research Skill Package</h3>
+          <p>Use the NPV-DCF package as an example of purpose, inputs, outputs, procedure, and validation metadata.</p>
+        </div>
+        <a class="primary-action" href="{{ url_for('download_skill_package', skill_id='npv-dcf') }}">Download Example</a>
+      </article>
+      <article class="simple-skill-card">
+        <div>
+          <span class="badge">Publisher</span>
+          <h3>Contribute a Skill</h3>
+          <p>Upload a SKILL.md file or ZIP package and review the metadata detected by the platform.</p>
+        </div>
+        <a class="secondary-action" href="{{ url_for('publish') }}">Open Contributor</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading compact-heading">
+      <h2>Documentation</h2>
+      <p>Find concise guidance for the platform's core workflows.</p>
+    </div>
+    <div class="simple-skill-grid">
+      <article class="simple-skill-card">
+        <div>
+          <span class="badge">Documentation</span>
+          <h3>Using Skills</h3>
+          <p>Select an executable workflow, provide its required inputs, and download the generated outputs.</p>
+        </div>
+        <a class="primary-action" href="{{ url_for('use_skills') }}">View Use Skills</a>
+      </article>
+      <article class="simple-skill-card">
+        <div>
+          <span class="badge">Documentation</span>
+          <h3>Publishing Skills</h3>
+          <p>Package a reusable method with clear inputs, outputs, procedures, references, and validation evidence.</p>
+        </div>
+        <a class="secondary-action" href="{{ url_for('publish') }}">View Publishing</a>
+      </article>
+    </div>
+  </section>
+{% endblock %}

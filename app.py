@@ -61,6 +61,12 @@ MODULES = [
         "label": "Use Skills",
         "summary": "Select and run a research skill with your own inputs.",
     },
+    {
+        "name": "Resources",
+        "slug": "resources",
+        "label": "Resources",
+        "summary": "Explore tutorials, skill templates, and platform documentation.",
+    },
 ]
 
 
@@ -1027,9 +1033,14 @@ def submitted_skill_file(skill_id: str, filename: str):
     return send_from_directory(base, filename, as_attachment=True)
 
 
+@app.route("/resources")
+def resources():
+    return render_template("resources.html")
+
+
 @app.route("/videos")
 def videos():
-    return render_template("videos.html")
+    return redirect(url_for("resources"), code=301)
 
 
 @app.route("/account")
