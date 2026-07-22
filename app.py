@@ -266,6 +266,24 @@ SAMPLE_SKILLS = [
     },
 ]
 
+SKILL_CATEGORIES = [
+    {
+        "slug": "research-method",
+        "label": "Research Method Skills",
+        "description": "General research methods designed to be reused across projects and studies.",
+    },
+    {
+        "slug": "paper-specific",
+        "label": "Paper-Specific Skills",
+        "description": "Skills tied to the data, methods, or replication workflow of a specific paper.",
+    },
+    {
+        "slug": "grant-application",
+        "label": "Grant Application Skills",
+        "description": "Skills for preparing, reviewing, and improving research grant applications.",
+    },
+]
+
 
 def save_upload(field: str, run_dir: Path, required: bool = True) -> Path | None:
     uploaded = request.files.get(field)
@@ -379,6 +397,7 @@ def extract_skill_metadata(text: str) -> dict[str, str]:
         "validation_standard": front_matter.get("validation_standard") or validation,
         "author": front_matter.get("author", ""),
         "version": front_matter.get("version") or "0.1",
+        "skill_category": front_matter.get("skill_category") or front_matter.get("category") or "",
         "license": front_matter.get("license") or "Not specified",
         "purpose": purpose,
         "procedure": extract_heading_section(text, "Procedure") or extract_heading_section(text, "Procedure Summary"),
@@ -713,6 +732,7 @@ def normalize_skill(skill: dict[str, str], contributed: bool = False) -> dict[st
         "created_at": skill.get("created_at", "Sample"),
         "contributed": contributed,
         "executable": skill.get("executable", False),
+        "skill_category": skill.get("skill_category") or "research-method",
     }
     normalized["detail_href"] = url_for("library_skill_detail", skill_id=normalized["id"])
     normalized["use_href"] = url_for("use_skill", skill_id=normalized["id"])
@@ -762,6 +782,13 @@ def library():
     validation_statuses = sorted({skill["validation_status"] for skill in skills})
     input_types = sorted({skill["input_type"] for skill in skills})
     output_types = sorted({skill["output_type"] for skill in skills})
+    skill_sections = [
+        {
+            **category,
+            "skills": [skill for skill in skills if skill["skill_category"] == category["slug"]],
+        }
+        for category in SKILL_CATEGORIES
+    ]
     return render_template(
         "library.html",
         skills=skills,
@@ -770,6 +797,7 @@ def library():
         validation_statuses=validation_statuses,
         input_types=input_types,
         output_types=output_types,
+        skill_sections=skill_sections,
     )
 
 
@@ -847,6 +875,10 @@ def publish():
         license_name = request.form.get("license", "").strip() or "Not specified"
         skill_status = request.form.get("skill_status", "Draft").strip() or "Draft"
         visibility = request.form.get("visibility", "Private Draft").strip() or "Private Draft"
+        skill_category = request.form.get("skill_category", "research-method").strip() or "research-method"
+        valid_categories = {category["slug"] for category in SKILL_CATEGORIES}
+        if skill_category not in valid_categories:
+            skill_category = "research-method"
 
         if not name:
             return render_template("publish.html", error="Skill name could not be detected. Please add it before submitting.", preview=None), 400
@@ -867,6 +899,7 @@ def publish():
             "validation_standard": validation_standard or "Not specified",
             "validation_status": skill_status,
             "visibility": visibility,
+            "skill_category": skill_category,
             "status": skill_status,
             "version": version,
             "license": license_name,

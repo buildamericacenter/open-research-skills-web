@@ -48,6 +48,10 @@
           <dd>{{ metadata.research_type or "Not detected" }}</dd>
         </div>
         <div>
+          <dt>Skill Category</dt>
+          <dd>{{ metadata.skill_category or "Not detected" }}</dd>
+        </div>
+        <div>
           <dt>Required Inputs</dt>
           <dd>{{ metadata.input_type or "Not detected" }}</dd>
         </div>
@@ -138,6 +142,14 @@
         {% endif %}
 
         <input type="hidden" name="version" value="{{ metadata.version or '0.1' }}">
+        <label>
+          <span>Skill Category</span>
+          <select name="skill_category">
+            <option value="research-method" {% if metadata.skill_category == 'research-method' %}selected{% endif %}>Research Method Skill</option>
+            <option value="paper-specific" {% if metadata.skill_category == 'paper-specific' %}selected{% endif %}>Paper-Specific Skill</option>
+            <option value="grant-application" {% if metadata.skill_category == 'grant-application' %}selected{% endif %}>Grant Application Skill</option>
+          </select>
+        </label>
         <label>
           <span>Skill Status</span>
           <select name="skill_status">

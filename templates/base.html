@@ -11,7 +11,9 @@
       <a class="brand" href="{{ url_for('index') }}">Open Research Skills</a>
       <nav class="nav">
         {% for module in modules %}
-          <a class="{% if request.endpoint == module.slug %}active{% endif %}" href="{{ url_for(module.slug) }}">{{ module.label }}</a>
+          {% if module.slug != 'account' %}
+            <a class="{% if request.endpoint == module.slug %}active{% endif %}" href="{{ url_for(module.slug) }}">{{ module.label }}</a>
+          {% endif %}
         {% endfor %}
         {% if current_account %}
           <a class="{% if request.endpoint == 'account' %}active{% endif %}" href="{{ url_for('account') }}">{{ current_account.full_name }}</a>

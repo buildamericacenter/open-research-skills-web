@@ -57,15 +57,23 @@
     </div>
   </section>
 
-  <section class="library-section">
-    <h2>All Skills</h2>
-    <div class="simple-skill-grid" id="skillGrid" aria-live="polite">
-      {% for skill in skills %}
-        {% include "partials/simple_skill_card.html" %}
-      {% endfor %}
-    </div>
+  <div id="skillGrid" aria-live="polite">
+    {% for section in skill_sections %}
+      <section class="library-section skill-category-section">
+        <div class="section-heading">
+          <h2>{{ section.label }}</h2>
+          <p>{{ section.description }}</p>
+        </div>
+        <div class="simple-skill-grid">
+          {% for skill in section.skills %}
+            {% include "partials/simple_skill_card.html" %}
+          {% endfor %}
+        </div>
+        <p class="empty-state category-empty" {% if section.skills %}hidden{% endif %}>Skills in this category will be added soon.</p>
+      </section>
+    {% endfor %}
     <p class="empty-state" id="emptyState" hidden>No skills match the current search and filters.</p>
-  </section>
+  </div>
 
   <script>
     const filterToggle = document.getElementById("filterToggle");
@@ -79,6 +87,7 @@
     };
     const skillCards = Array.from(document.querySelectorAll("#skillGrid .simple-skill-card"));
     const emptyState = document.getElementById("emptyState");
+    const categorySections = Array.from(document.querySelectorAll(".skill-category-section"));
 
     filterToggle.addEventListener("click", () => {
       const expanded = filterToggle.getAttribute("aria-expanded") === "true";
@@ -99,6 +108,14 @@
           (!controls.outputType.value || card.dataset.outputType === controls.outputType.value);
         card.hidden = !isVisible;
         if (isVisible) visibleCount += 1;
+      });
+
+      categorySections.forEach((section) => {
+        const cards = Array.from(section.querySelectorAll(".simple-skill-card"));
+        const categoryEmpty = section.querySelector(".category-empty");
+        const hasVisibleCard = cards.some((card) => !card.hidden);
+        section.hidden = cards.length > 0 && !hasVisibleCard;
+        categoryEmpty.hidden = cards.length > 0;
       });
 
       emptyState.hidden = visibleCount !== 0;
