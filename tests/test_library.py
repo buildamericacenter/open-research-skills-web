@@ -32,7 +32,7 @@ class SkillLibraryTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Open Skill", body)
         self.assertNotIn("View Details", body)
-        self.assertNotIn("Use Skill", body)
+        self.assertNotIn(">Use Skill</a>", body)
         self.assertNotIn(">Comment</a>", body)
 
     def test_sample_skill_detail_pages_render_required_sections(self):

@@ -8,6 +8,7 @@
   --accent-dark: #0f466d;
   --publish: #7b5a18;
   --library: #1f6f63;
+  --use: #365f91;
   --validation: #8b3f2f;
   --education: #4d5f9f;
   --account: #5f5668;
@@ -262,6 +263,10 @@ a {
 .module-library,
 .library-sidebar {
   --accent: var(--library);
+}
+
+.module-use_skills {
+  --accent: var(--use);
 }
 
 .module-validation,

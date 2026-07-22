@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Use Skills{% endblock %}
+{% block content %}
+  <section class="library-hero">
+    <p class="eyebrow">Run Research Workflows</p>
+    <h1>Use Skills</h1>
+    <p>Select a research skill, provide the required inputs, and run a reproducible workflow.</p>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading">
+      <h2>Ready to Run</h2>
+      <p>These skills currently have an executable workflow.</p>
+    </div>
+    <div class="simple-skill-grid">
+      {% for skill in executable_skills %}
+        <article class="simple-skill-card">
+          <div>
+            <span class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</span>
+            <h3>{{ skill.name }}</h3>
+            <p>{{ skill.description }}</p>
+          </div>
+          <a class="primary-action" href="{{ skill.use_href }}">Run Skill</a>
+        </article>
+      {% else %}
+        <p class="empty-state">No executable skills are available yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="library-section">
+    <div class="section-heading">
+      <h2>More Skills</h2>
+      <p>Review the method and required inputs. Executable workflows are being added progressively.</p>
+    </div>
+    <div class="simple-skill-grid">
+      {% for skill in upcoming_skills %}
+        <article class="simple-skill-card">
+          <div>
+            <span class="badge status-{{ skill.status_class }}">{{ skill.validation_status }}</span>
+            <h3>{{ skill.name }}</h3>
+            <p>{{ skill.description }}</p>
+          </div>
+          <a class="secondary-action" href="{{ skill.detail_href }}">View Skill</a>
+        </article>
+      {% else %}
+        <p class="empty-state">No additional skills are listed.</p>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

@@ -46,32 +46,20 @@ MODULES = [
     {
         "name": "Publish / Contribute Skills",
         "slug": "publish",
-        "label": "Publish",
+        "label": "Contribute Skills",
         "summary": "Submit reusable research skill packages.",
     },
     {
         "name": "Skill Library",
         "slug": "library",
-        "label": "Library",
+        "label": "Skills Library",
         "summary": "Browse executable methods and examples.",
     },
     {
-        "name": "Validation",
-        "slug": "validation",
-        "label": "Validation",
-        "summary": "Check outputs against expected results.",
-    },
-    {
-        "name": "Demo / Education Videos",
-        "slug": "videos",
-        "label": "Education",
-        "summary": "Host short walkthroughs and teaching notes.",
-    },
-    {
-        "name": "User Account Management",
-        "slug": "account",
-        "label": "Account",
-        "summary": "Manage profiles, roles, and saved work.",
+        "name": "Use Skills",
+        "slug": "use_skills",
+        "label": "Use Skills",
+        "summary": "Select and run a research skill with your own inputs.",
     },
 ]
 
@@ -798,6 +786,16 @@ def library():
         input_types=input_types,
         output_types=output_types,
         skill_sections=skill_sections,
+    )
+
+
+@app.route("/use-skills")
+def use_skills():
+    skills = all_library_skills()
+    return render_template(
+        "use_skills.html",
+        executable_skills=[skill for skill in skills if skill["executable"]],
+        upcoming_skills=[skill for skill in skills if not skill["executable"]],
     )
 
 
